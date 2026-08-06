@@ -1,0 +1,14 @@
+SELECT 
+e.employee_id,
+e.employee_name,
+e.employee_position,
+b.branch_name,
+b.district_name,
+COUNT(l.loan_id) AS number_of_loans_processed,
+COALESCE(SUM(l.loan_amount), 0) AS total_loan_amount,
+COALESCE(AVG(l.loan_amount), 0) AS average_loan_amount
+FROM LOAN l
+INNER JOIN BANK_BRANCH b ON l.employee_id = b.branch_id 
+RIGHT JOIN BANK_EMPLOYEE e ON l.employee_id = e.employee_id
+GROUP BY e.employee_id, e.employee_name, e.employee_position, b.branch_name, b.district_name
+HAVING COALESCE(AVG(l.loan_amount), 0) > 500000;

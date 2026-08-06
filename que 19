@@ -1,0 +1,29 @@
+SELECT 
+c.national_id,
+c.customer_name,
+act.account_type_name,
+COUNT(DISTINCT a.account_id) AS number_of_accounts,
+COUNT(DISTINCT bc.card_id) AS number_of_cards,
+COUNT(DISTINCT ben.beneficiary_id) AS number_of_beneficiaries,
+COUNT(DISTINCT mb.mobile_banking_id) AS number_of_mobile_banking_registrations,
+COALESCE(SUM(DISTINCT d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) AS total_withdrawn_amount,
+COALESCE(SUM(DISTINCT l.loan_amount), 0) AS total_loan_amount,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_repayment_amount
+FROM CUSTOMER c
+INNER JOIN ACCOUNT_TYPE act
+LEFT JOIN BANK_CARD bc ON a.account_id = bc.account_id
+LEFT JOIN BENEFICIARY ben ON c.customer_id = ben.customer_id
+LEFT JOIN MOBILE_BANKING mb ON a.account_id = mb.account_id
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+LEFT JOIN LOAN l ON c.customer_id = l.customer_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+RIGHT JOIN BANK_ACCOUNT a ON c.customer_id = a.customer_id AND a.account_type_id = act.account_type_id
+GROUP BY c.customer_id, c.national_id, c.customer_name, act.account_type_name
+HAVING (
+COUNT(DISTINCT a.account_id) + 
+COUNT(DISTINCT bc.card_id) + 
+COUNT(DISTINCT ben.beneficiary_id) + 
+COUNT(DISTINCT mb.mobile_banking_id)
+) > 1;

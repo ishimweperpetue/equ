@@ -1,0 +1,17 @@
+SELECT 
+c.national_id,
+c.customer_name,
+bc.card_number,
+bc.card_type,
+act.account_type_name,
+COUNT(d.deposit_id) AS number_of_deposits,
+COALESCE(SUM(d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(w.withdrawal_amount), 0) AS total_withdrawn_amount
+FROM BANK_ACCOUNT a
+INNER JOIN CUSTOMER c ON a.customer_id = c.customer_id
+INNER JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+RIGHT JOIN BANK_CARD bc ON a.account_id = bc.account_id
+GROUP BY c.national_id, c.customer_name, bc.card_id, bc.card_number, bc.card_type, act.account_type_name
+HAVING COALESCE(SUM(d.deposit_amount), 0) > 1000000;

@@ -1,0 +1,25 @@
+SELECT 
+c.national_id,
+c.customer_name,
+lt.loan_type_name,
+emp.employee_name,
+b.branch_name,
+l.loan_amount,
+COUNT(DISTINCT lr.repayment_id) AS number_of_repayments,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_repayment_amount,
+COALESCE(SUM(DISTINCT g.guaranteed_amount), 0) AS total_guaranteed_amount,
+COALESCE(SUM(DISTINCT col.collateral_value), 0) AS total_collateral_value,
+COALESCE(SUM(DISTINCT ip.premium_amount), 0) AS total_insurance_premiums,
+(l.loan_amount - COALESCE(SUM(DISTINCT lr.repayment_amount), 0)) AS outstanding_loan_balance
+FROM CUSTOMER c
+INNER JOIN LOAN l ON c.customer_id = l.customer_id
+INNER JOIN LOAN_TYPE lt ON l.loan_type_id = lt.loan_type_id
+INNER JOIN BANK_EMPLOYEE emp ON l.employee_id = emp.employee_id
+INNER JOIN BANK_BRANCH b ON emp.branch_id = b.branch_id
+INNER JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+LEFT JOIN GUARANTOR g ON l.loan_id = g.loan_id
+LEFT JOIN COLLATERAL col ON l.loan_id = col.loan_id
+LEFT JOIN INSURANCE_POLICY ip ON l.loan_id = ip.loan_id
+GROUP BY l.loan_id, c.national_id, c.customer_name, lt.loan_type_name, emp.employee_name, b.branch_name, l.loan_amount
+HAVING COUNT(DISTINCT lr.repayment_id) > 2 
+AND (l.loan_amount - COALESCE(SUM(DISTINCT lr.repayment_amount), 0)) > 0;

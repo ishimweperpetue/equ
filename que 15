@@ -1,0 +1,13 @@
+SELECT 
+c.national_id,
+c.customer_name,
+a.account_id,
+COALESCE(SUM(DISTINCT d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) AS total_withdrawn_amount,
+ROUND((COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) / NULLIF(SUM(DISTINCT d.deposit_amount), 0)) * 100, 2) AS withdrawal_percentage
+FROM BANK_ACCOUNT a
+INNER JOIN CUSTOMER c ON a.customer_id = c.customer_id
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+GROUP BY a.account_id, c.national_id, c.customer_name
+HAVING ROUND((COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) / NULLIF(SUM(DISTINCT d.deposit_amount), 0)) * 100, 2) > 10.00;

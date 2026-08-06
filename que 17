@@ -1,0 +1,19 @@
+SELECT 
+e.employee_id,
+e.employee_name,
+e.employee_position,
+b.branch_name,
+COUNT(DISTINCT w.withdrawal_id) AS number_of_withdrawals_processed,
+COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) AS total_withdrawn_amount,
+COUNT(DISTINCT l.loan_id) AS number_of_loans_processed,
+COALESCE(SUM(DISTINCT l.loan_amount), 0) AS total_loan_amount,
+COUNT(DISTINCT comp.complaint_id) AS number_of_complaints_handled,
+COUNT(DISTINCT CASE WHEN comp.complaint_status IN ('Pending', 'In Progress') THEN comp.complaint_id END) AS number_of_unresolved_complaints
+FROM BANK_EMPLOYEE e
+INNER JOIN BANK_BRANCH b ON e.branch_id = b.branch_id
+INNER JOIN WITHDRAWAL w ON e.employee_id = w.employee_id
+INNER JOIN LOAN l ON e.employee_id = l.employee_id
+LEFT JOIN CUSTOMER_COMPLAINT comp ON e.employee_id = comp.employee_id
+GROUP BY e.employee_id, e.employee_name, e.employee_position, b.branch_name
+HAVING COUNT(DISTINCT w.withdrawal_id) > 5 
+   AND COALESCE(SUM(DISTINCT l.loan_amount), 0) > 1000000;

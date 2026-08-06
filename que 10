@@ -1,0 +1,59 @@
+SELECT 
+c.national_id,
+c.customer_name,
+c.customer_type,
+act.account_type_name,
+b.branch_name,
+b.district_name,
+emp.employee_name,
+cur.currency_name,
+lt.loan_type_name,
+COUNT(DISTINCT a.account_id) AS number_of_accounts,
+COUNT(DISTINCT dep.deposit_id) AS number_of_deposits,
+COALESCE(SUM(DISTINCT dep.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) AS total_withdrawn_amount,
+COALESCE(SUM(DISTINCT l.loan_amount), 0) AS total_loan_amount,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_repayment_amount,
+COALESCE(SUM(DISTINCT g.guaranteed_amount), 0) AS total_guaranteed_amount,
+COALESCE(SUM(DISTINCT col.collateral_value), 0) AS total_collateral_value,
+COUNT(DISTINCT bc.card_id) AS number_of_cards,
+COUNT(DISTINCT ben.beneficiary_id) AS number_of_beneficiaries,
+COUNT(DISTINCT mb.mobile_banking_id) AS number_of_mobile_banking_registrations,
+COALESCE(SUM(DISTINCT fd.principal_amount), 0) AS total_fixed_deposit_principal,
+COALESCE(SUM(DISTINCT ip.premium_amount), 0) AS total_insurance_premiums,
+COUNT(DISTINCT comp.complaint_id) AS number_of_complaints,
+bt.target_amount,
+ROUND((COALESCE(SUM(DISTINCT dep.deposit_amount), 0) / NULLIF(bt.target_amount, 0)) * 100, 2) AS branch_performance_percentage
+FROM BANK_ACCOUNT a
+INNER JOIN CUSTOMER c ON a.customer_id = c.customer_id
+INNER JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+INNER JOIN BANK_BRANCH b ON a.branch_id = b.branch_id
+INNER JOIN BANK_EMPLOYEE emp ON b.branch_id = emp.branch_id
+LEFT JOIN DEPOSIT dep ON a.account_id = dep.account_id
+LEFT JOIN CURRENCY cur ON dep.currency_id = cur.currency_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+LEFT JOIN LOAN l ON c.customer_id = l.customer_id
+LEFT JOIN LOAN_TYPE lt ON l.loan_type_id = lt.loan_type_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+LEFT JOIN GUARANTOR g ON l.loan_id = g.loan_id
+LEFT JOIN COLLATERAL col ON l.loan_id = col.loan_id
+LEFT JOIN BANK_CARD bc ON a.account_id = bc.account_id
+LEFT JOIN BENEFICIARY ben ON c.customer_id = ben.customer_id
+LEFT JOIN MOBILE_BANKING mb ON a.account_id = mb.account_id
+LEFT JOIN FIXED_DEPOSIT fd ON a.account_id = fd.account_id
+LEFT JOIN INSURANCE_POLICY ip ON c.customer_id = ip.customer_id
+LEFT JOIN CUSTOMER_COMPLAINT comp ON c.customer_id = comp.customer_id
+RIGHT JOIN BRANCH_TARGET bt ON b.branch_id = bt.branch_id AND act.account_type_id = bt.account_type_id
+GROUP BY 
+    c.customer_id, c.national_id, c.customer_name, c.customer_type, 
+    act.account_type_name, b.branch_name, b.district_name, emp.employee_name, 
+    cur.currency_name, lt.loan_type_name, bt.target_amount, l.loan_id
+HAVING 
+    COALESCE(SUM(DISTINCT l.loan_amount), 0) > COALESCE(SUM(DISTINCT lr.repayment_amount), 0)
+    AND COALESCE(SUM(DISTINCT dep.deposit_amount), 0) > 0
+    AND (COALESCE(SUM(DISTINCT l.loan_amount), 0) - COALESCE(SUM(DISTINCT lr.repayment_amount), 0)) > 0
+ORDER BY 
+    b.district_name ASC, 
+    b.branch_name ASC, 
+    c.customer_name ASC, 
+    total_loan_amount DESC;

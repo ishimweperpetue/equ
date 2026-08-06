@@ -1,0 +1,13 @@
+SELECT 
+c.national_id,
+c.customer_name,
+l.loan_id,
+l.loan_amount,
+COUNT(lr.repayment_id) AS number_of_repayments,
+COALESCE(SUM(lr.repayment_amount), 0) AS total_repayment_amount,
+(l.loan_amount - COALESCE(SUM(lr.repayment_amount), 0)) AS outstanding_balance
+FROM LOAN l
+INNER JOIN CUSTOMER c ON l.customer_id = c.customer_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+GROUP BY l.loan_id, c.national_id, c.customer_name, l.loan_amount
+HAVING (l.loan_amount - COALESCE(SUM(lr.repayment_amount), 0)) > 500000;

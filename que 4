@@ -1,0 +1,14 @@
+SELECT 
+act.account_type_id,
+act.account_type_name,
+act.minimum_balance,
+act.interest_rate,
+COUNT(DISTINCT a.account_id) AS number_of_customer_accounts,
+COALESCE(SUM(d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(w.withdrawal_amount), 0) AS total_withdrawn_amount
+FROM BANK_ACCOUNT a
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+RIGHT JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+GROUP BY act.account_type_id, act.account_type_name, act.minimum_balance, act.interest_rate
+HAVING COALESCE(SUM(d.deposit_amount), 0) < 5000000;

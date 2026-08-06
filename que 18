@@ -1,0 +1,23 @@
+SELECT 
+c.national_id,
+c.customer_name,
+COUNT(DISTINCT a.account_id) AS number_of_bank_accounts,
+COUNT(DISTINCT bc.card_id) AS number_of_bank_cards,
+COUNT(DISTINCT ben.beneficiary_id) AS number_of_beneficiaries,
+COUNT(DISTINCT mb.mobile_banking_id) AS number_of_mobile_banking_registrations,
+COUNT(DISTINCT fd.fixed_deposit_id) AS number_of_fixed_deposits,
+COALESCE(SUM(DISTINCT fd.principal_amount), 0) AS total_fixed_deposit_principal,
+COALESCE(SUM(DISTINCT l.loan_amount), 0) AS total_loan_amount,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_repayment_amount,
+COALESCE(SUM(DISTINCT ip.premium_amount), 0) AS total_insurance_premiums
+FROM CUSTOMER c
+LEFT JOIN BANK_ACCOUNT a ON c.customer_id = a.customer_id
+LEFT JOIN BANK_CARD bc ON a.account_id = bc.account_id
+LEFT JOIN BENEFICIARY ben ON c.customer_id = ben.customer_id
+LEFT JOIN MOBILE_BANKING mb ON c.customer_id = mb.customer_id
+LEFT JOIN FIXED_DEPOSIT fd ON a.account_id = fd.account_id
+LEFT JOIN LOAN l ON c.customer_id = l.customer_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+LEFT JOIN INSURANCE_POLICY ip ON c.customer_id = ip.customer_id
+GROUP BY c.customer_id, c.national_id, c.customer_name
+HAVING COALESCE(SUM(DISTINCT fd.principal_amount), 0) > 5000000;

@@ -1,0 +1,21 @@
+SELECT 
+c.national_id,
+c.customer_name,
+act.account_type_name,
+b.branch_name,
+lt.loan_type_name,
+SUM(DISTINCT l.loan_amount) AS total_loan_amount,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_repayment_amount,
+COALESCE(SUM(DISTINCT g.guaranteed_amount), 0) AS total_guaranteed_amount,
+COALESCE(SUM(DISTINCT col.collateral_value), 0) AS total_collateral_value
+FROM CUSTOMER c
+INNER JOIN BANK_ACCOUNT a ON c.customer_id = a.customer_id
+INNER JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+INNER JOIN BANK_BRANCH b ON a.branch_id = b.branch_id
+INNER JOIN LOAN l ON c.customer_id = l.customer_id
+INNER JOIN LOAN_TYPE lt ON l.loan_type_id = lt.loan_type_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+LEFT JOIN GUARANTOR g ON l.loan_id = g.loan_id
+LEFT JOIN COLLATERAL col ON l.loan_id = col.loan_id
+GROUP BY c.customer_id, c.national_id, c.customer_name, act.account_type_name, b.branch_name, lt.loan_type_name
+HAVING SUM(DISTINCT l.loan_amount) > 10000000;

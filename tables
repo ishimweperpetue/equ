@@ -1,0 +1,189 @@
+CREATE DATABASE IF NOT EXISTS EQUITY_BANK_DB;
+USE EQUITY_BANK_DB;
+
+CREATE TABLE CUSTOMER (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    national_id VARCHAR(50) NOT NULL UNIQUE,
+    customer_name VARCHAR(100) NOT NULL,
+    customer_type VARCHAR(20) NOT NULL CHECK (customer_type IN ('Individual', 'Company')),
+    registration_date DATE NOT NULL DEFAULT (CURRENT_DATE)
+);
+
+CREATE TABLE BANK_BRANCH (
+    branch_id INT AUTO_INCREMENT PRIMARY KEY,
+    branch_name VARCHAR(100) NOT NULL UNIQUE,
+    district_name VARCHAR(50) NOT NULL,
+    branch_manager VARCHAR(100) NOT NULL,
+    opening_date DATE NOT NULL
+);
+
+CREATE TABLE BANK_EMPLOYEE (
+    employee_id INT AUTO_INCREMENT PRIMARY KEY,
+    branch_id INT NOT NULL,
+    employee_name VARCHAR(100) NOT NULL,
+    employee_position VARCHAR(50) NOT NULL,
+    employment_date DATE NOT NULL,
+    FOREIGN KEY (branch_id) REFERENCES BANK_BRANCH(branch_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE ACCOUNT_TYPE (
+    account_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    account_type_name VARCHAR(50) NOT NULL UNIQUE,
+    minimum_balance DECIMAL(15, 2) NOT NULL DEFAULT 0.00 CHECK (minimum_balance >= 0),
+    interest_rate DECIMAL(5, 2) NOT NULL DEFAULT 0.00 CHECK (interest_rate >= 0),
+    effective_date DATE NOT NULL
+);
+
+CREATE TABLE BANK_ACCOUNT (
+    account_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    account_type_id INT NOT NULL,
+    branch_id INT NOT NULL,
+    opening_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (account_type_id) REFERENCES ACCOUNT_TYPE(account_type_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (branch_id) REFERENCES BANK_BRANCH(branch_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE CURRENCY (
+    currency_id INT AUTO_INCREMENT PRIMARY KEY,
+    currency_code VARCHAR(10) NOT NULL UNIQUE,
+    currency_name VARCHAR(50) NOT NULL,
+    exchange_rate DECIMAL(12, 4) NOT NULL CHECK (exchange_rate > 0),
+    effective_date DATE NOT NULL
+);
+
+CREATE TABLE DEPOSIT (
+    deposit_id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT NOT NULL,
+    currency_id INT NOT NULL,
+    deposit_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    deposit_amount DECIMAL(15, 2) NOT NULL CHECK (deposit_amount > 0),
+    FOREIGN KEY (account_id) REFERENCES BANK_ACCOUNT(account_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (currency_id) REFERENCES CURRENCY(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE WITHDRAWAL (
+    withdrawal_id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    withdrawal_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    withdrawal_amount DECIMAL(15, 2) NOT NULL CHECK (withdrawal_amount > 0),
+    FOREIGN KEY (account_id) REFERENCES BANK_ACCOUNT(account_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES BANK_EMPLOYEE(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE LOAN_TYPE (
+    loan_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    loan_type_name VARCHAR(50) NOT NULL UNIQUE,
+    interest_rate DECIMAL(5, 2) NOT NULL CHECK (interest_rate >= 0),
+    maximum_period_months INT NOT NULL CHECK (maximum_period_months > 0),
+    effective_date DATE NOT NULL
+);
+
+CREATE TABLE LOAN (
+    loan_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    loan_type_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    loan_amount DECIMAL(15, 2) NOT NULL CHECK (loan_amount > 0),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (loan_type_id) REFERENCES LOAN_TYPE(loan_type_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES BANK_EMPLOYEE(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE LOAN_REPAYMENT (
+    repayment_id INT AUTO_INCREMENT PRIMARY KEY,
+    loan_id INT NOT NULL,
+    account_id INT NOT NULL,
+    repayment_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    repayment_amount DECIMAL(15, 2) NOT NULL CHECK (repayment_amount > 0),
+    FOREIGN KEY (loan_id) REFERENCES LOAN(loan_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES BANK_ACCOUNT(account_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE GUARANTOR (
+    guarantor_id INT AUTO_INCREMENT PRIMARY KEY,
+    loan_id INT NOT NULL,
+    guarantor_name VARCHAR(100) NOT NULL,
+    guarantor_phone VARCHAR(20) NOT NULL,
+    guaranteed_amount DECIMAL(15, 2) NOT NULL CHECK (guaranteed_amount > 0),
+    FOREIGN KEY (loan_id) REFERENCES LOAN(loan_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE COLLATERAL (
+    collateral_id INT AUTO_INCREMENT PRIMARY KEY,
+    loan_id INT NOT NULL,
+    collateral_type VARCHAR(50) NOT NULL,
+    collateral_value DECIMAL(15, 2) NOT NULL CHECK (collateral_value > 0),
+    registration_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (loan_id) REFERENCES LOAN(loan_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE BANK_CARD (
+    card_id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT NOT NULL,
+    card_number VARCHAR(20) NOT NULL UNIQUE,
+    card_type VARCHAR(20) NOT NULL CHECK (card_type IN ('Debit', 'Credit')),
+    issue_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (account_id) REFERENCES BANK_ACCOUNT(account_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE MOBILE_BANKING (
+    mobile_banking_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    account_id INT NOT NULL,
+    phone_number VARCHAR(20) NOT NULL,
+    registration_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES BANK_ACCOUNT(account_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE BENEFICIARY (
+    beneficiary_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    beneficiary_name VARCHAR(100) NOT NULL,
+    beneficiary_account VARCHAR(50) NOT NULL,
+    registration_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE FIXED_DEPOSIT (
+    fixed_deposit_id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT NOT NULL,
+    currency_id INT NOT NULL,
+    principal_amount DECIMAL(15, 2) NOT NULL CHECK (principal_amount > 0),
+    maturity_date DATE NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES BANK_ACCOUNT(account_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (currency_id) REFERENCES CURRENCY(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE INSURANCE_POLICY (
+    policy_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    loan_id INT NULL,
+    policy_type VARCHAR(50) NOT NULL,
+    premium_amount DECIMAL(15, 2) NOT NULL CHECK (premium_amount > 0),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (loan_id) REFERENCES LOAN(loan_id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE CUSTOMER_COMPLAINT (
+    complaint_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    complaint_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    complaint_status VARCHAR(20) NOT NULL CHECK (complaint_status IN ('Pending', 'In Progress', 'Resolved', 'Closed')),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES BANK_EMPLOYEE(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE BRANCH_TARGET (
+    target_id INT AUTO_INCREMENT PRIMARY KEY,
+    branch_id INT NOT NULL,
+    account_type_id INT NOT NULL,
+    target_year INT NOT NULL CHECK (target_year >= 2000),
+    target_amount DECIMAL(15, 2) NOT NULL CHECK (target_amount >= 0),
+    FOREIGN KEY (branch_id) REFERENCES BANK_BRANCH(branch_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (account_type_id) REFERENCES ACCOUNT_TYPE(account_type_id) ON DELETE RESTRICT ON UPDATE CASCADE
+);

@@ -1,0 +1,16 @@
+SELECT 
+c.national_id,
+c.customer_name,
+lt.loan_type_name,
+l.loan_amount,
+lt.interest_rate,
+lt.maximum_period_months AS maximum_repayment_period,
+COUNT(lr.repayment_id) AS number_of_repayments,
+COALESCE(SUM(lr.repayment_amount), 0) AS total_repayment_amount,
+(l.loan_amount - COALESCE(SUM(lr.repayment_amount), 0)) AS outstanding_loan_balance
+FROM CUSTOMER c
+INNER JOIN LOAN l ON c.customer_id = l.customer_id
+INNER JOIN LOAN_TYPE lt ON l.loan_type_id = lt.loan_type_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+GROUP BY l.loan_id, c.national_id, c.customer_name, lt.loan_type_name, l.loan_amount, lt.interest_rate, lt.maximum_period_months
+HAVING (l.loan_amount - COALESCE(SUM(lr.repayment_amount), 0)) > 0;

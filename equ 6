@@ -1,0 +1,15 @@
+SELECT 
+c.national_id,
+c.customer_name,
+a.opening_date AS account_opening_date,
+act.account_type_name,
+COUNT(d.deposit_id) AS number_of_deposits,
+COALESCE(SUM(d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(w.withdrawal_amount), 0) AS total_withdrawn_amount
+FROM CUSTOMER c
+INNER JOIN BANK_ACCOUNT a ON c.customer_id = a.customer_id
+INNER JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+GROUP BY c.customer_id, c.national_id, c.customer_name, a.account_id, a.opening_date, act.account_type_name
+HAVING COALESCE(SUM(w.withdrawal_amount), 0) > COALESCE(SUM(d.deposit_amount), 0);

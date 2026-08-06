@@ -1,0 +1,21 @@
+SELECT 
+c.national_id,
+c.customer_name,
+c.customer_type,
+act.account_type_name,
+b.branch_name,
+b.district_name,
+COALESCE(SUM(DISTINCT dep.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) AS total_withdrawn_amount,
+SUM(DISTINCT l.loan_amount) AS total_loan_amount,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_loan_repayment_amount
+FROM CUSTOMER c
+INNER JOIN BANK_ACCOUNT a ON c.customer_id = a.customer_id
+INNER JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+INNER JOIN BANK_BRANCH b ON a.branch_id = b.branch_id
+INNER JOIN LOAN l ON c.customer_id = l.customer_id
+LEFT JOIN DEPOSIT dep ON a.account_id = dep.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+GROUP BY c.customer_id, c.national_id, c.customer_name, c.customer_type, act.account_type_name, b.branch_name, b.district_name
+HAVING SUM(DISTINCT l.loan_amount) > 1000000;

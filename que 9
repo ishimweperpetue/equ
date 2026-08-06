@@ -1,0 +1,19 @@
+SELECT 
+c.national_id,
+c.customer_name,
+lt.loan_type_name,
+emp.employee_name,
+b.branch_name,
+COUNT(DISTINCT g.guarantor_id) AS number_of_guarantors,
+COALESCE(SUM(DISTINCT g.guaranteed_amount), 0) AS total_guaranteed_amount,
+COUNT(DISTINCT col.collateral_id) AS number_of_collateral_records,
+COALESCE(SUM(DISTINCT col.collateral_value), 0) AS total_collateral_value
+FROM LOAN l
+INNER JOIN CUSTOMER c ON l.customer_id = c.customer_id
+INNER JOIN LOAN_TYPE lt ON l.loan_type_id = lt.loan_type_id
+INNER JOIN BANK_EMPLOYEE emp ON l.employee_id = emp.employee_id
+INNER JOIN BANK_BRANCH b ON emp.branch_id = b.branch_id
+LEFT JOIN GUARANTOR g ON l.loan_id = g.loan_id
+LEFT JOIN COLLATERAL col ON l.loan_id = col.loan_id
+GROUP BY l.loan_id, c.national_id, c.customer_name, lt.loan_type_name, emp.employee_name, b.branch_name
+HAVING COALESCE(SUM(DISTINCT col.collateral_value), 0) > 2000000;

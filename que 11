@@ -1,0 +1,17 @@
+SELECT 
+c.national_id,
+c.customer_name,
+l.loan_id,
+lt.loan_type_name,
+l.loan_amount,
+COALESCE(SUM(DISTINCT lr.repayment_amount), 0) AS total_repayment_amount,
+SUM(DISTINCT g.guaranteed_amount) AS total_guaranteed_amount,
+COALESCE(SUM(DISTINCT col.collateral_value), 0) AS total_collateral_value
+FROM LOAN l
+INNER JOIN CUSTOMER c ON l.customer_id = c.customer_id
+INNER JOIN LOAN_TYPE lt ON l.loan_type_id = lt.loan_type_id
+INNER JOIN GUARANTOR g ON l.loan_id = g.loan_id
+LEFT JOIN LOAN_REPAYMENT lr ON l.loan_id = lr.loan_id
+LEFT JOIN COLLATERAL col ON l.loan_id = col.loan_id
+GROUP BY l.loan_id, c.national_id, c.customer_name, lt.loan_type_name, l.loan_amount
+HAVING COUNT(DISTINCT g.guarantor_id) >= 1 AND SUM(DISTINCT g.guaranteed_amount) > 100000;

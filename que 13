@@ -1,0 +1,15 @@
+SELECT 
+b.branch_id,
+b.branch_name,
+b.district_name,
+b.branch_manager,
+COUNT(DISTINCT a.account_id) AS number_of_customer_accounts,
+COALESCE(SUM(d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(AVG(d.deposit_amount), 0) AS average_deposit_amount,
+COALESCE(MAX(d.deposit_amount), 0) AS maximum_deposit_amount,
+COALESCE(MIN(d.deposit_amount), 0) AS minimum_deposit_amount
+FROM BANK_ACCOUNT a
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+RIGHT JOIN BANK_BRANCH b ON a.branch_id = b.branch_id
+GROUP BY b.branch_id, b.branch_name, b.district_name, b.branch_manager
+HAVING COALESCE(SUM(d.deposit_amount), 0) < 20000000;

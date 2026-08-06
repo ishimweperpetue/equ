@@ -1,0 +1,19 @@
+SELECT 
+b.branch_id,
+b.branch_name,
+b.district_name,
+b.branch_manager,
+act.account_type_name,
+bt.target_year,
+bt.target_amount,
+COALESCE(SUM(d.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(w.withdrawal_amount), 0) AS total_withdrawn_amount,
+(COALESCE(SUM(d.deposit_amount), 0) - COALESCE(SUM(w.withdrawal_amount), 0)) AS net_deposits
+FROM BANK_ACCOUNT a
+LEFT JOIN DEPOSIT d ON a.account_id = d.account_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+RIGHT JOIN BRANCH_TARGET bt ON a.branch_id = bt.branch_id AND a.account_type_id = bt.account_type_id
+INNER JOIN BANK_BRANCH b ON bt.branch_id = b.branch_id
+INNER JOIN ACCOUNT_TYPE act ON bt.account_type_id = act.account_type_id
+GROUP BY b.branch_id, b.branch_name, b.district_name, b.branch_manager, act.account_type_name, bt.target_id, bt.target_year, bt.target_amount
+HAVING COALESCE(SUM(d.deposit_amount), 0) < bt.target_amount;

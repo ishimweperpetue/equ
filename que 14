@@ -1,0 +1,19 @@
+SELECT 
+c.national_id,
+c.customer_name,
+act.account_type_name,
+b.branch_name,
+cur.currency_name,
+COUNT(DISTINCT dep.deposit_id) AS number_of_deposits,
+COALESCE(SUM(DISTINCT dep.deposit_amount), 0) AS total_deposited_amount,
+COALESCE(SUM(DISTINCT w.withdrawal_amount), 0) AS total_withdrawn_amount,
+(COALESCE(SUM(DISTINCT dep.deposit_amount), 0) - COALESCE(SUM(DISTINCT w.withdrawal_amount), 0)) AS net_account_movement
+FROM CUSTOMER c
+INNER JOIN BANK_ACCOUNT a ON c.customer_id = a.customer_id
+INNER JOIN ACCOUNT_TYPE act ON a.account_type_id = act.account_type_id
+INNER JOIN BANK_BRANCH b ON a.branch_id = b.branch_id
+INNER JOIN DEPOSIT dep ON a.account_id = dep.account_id
+INNER JOIN CURRENCY cur ON dep.currency_id = cur.currency_id
+LEFT JOIN WITHDRAWAL w ON a.account_id = w.account_id
+GROUP BY c.customer_id, c.national_id, c.customer_name, act.account_type_name, b.branch_name, cur.currency_name
+HAVING (COALESCE(SUM(DISTINCT dep.deposit_amount), 0) - COALESCE(SUM(DISTINCT w.withdrawal_amount), 0)) > 1000000;
